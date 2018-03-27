@@ -1,0 +1,83 @@
+from Cheetah.Template import Template
+import argparse
+import yaml
+import sys
+# input means input to the DUT, so output from the processing system/AXI master.
+
+class Reg(object):
+    
+    def __init__(self, name, direction="input", width=32):
+        self.name = name
+        self.direction = direction
+        self.input = direction == "input"
+        if width % 32 == 0:
+            self.width = width
+        else:
+            raise MathError("width must be a multiple of 32")
+    
+    def __str__(self):
+        return "%s [%i:0]" % (self.name, self.width-1)
+
+class Registers(object):
+    
+    def __init__(self, regs):
+        self.registers = regs
+    
+    @property
+    def twidth(self):
+        return sum([reg.width for reg in self.registers])
+    
+    def __internal_regs(self):
+        return [[Reg(name="%s_internal_%i" % (reg.name, i), 
+                     width=32,
+                     direction=reg.direction) 
+                 for i in range(reg.width//32)] for reg in self.registers]
+
+    @property
+    def internal_regs(self):
+        """list of 32 bit regs to map to the final desired registers.
+        """
+        flatten = lambda l: [item for sublist in l for item in sublist]
+        return Registers(flatten(self.__internal_regs()))
+    
+    @property
+    def internal_external_mapping(self):
+        return zip(self.registers, Registers(self.__internal_regs()))
+    
+    def __len__(self):
+        return len(self.registers)
+            
+    def __getitem__(self, position):
+        return self.registers.__getitem__(position)
+    
+    def __setitem__(self, *args):
+        self.registers.__setitem__(*args)
+    
+    def __repl__(self):
+        return "Set of Registers - " + "\n".join(self.registers.__repl__())
+            
+# registers = Registers([Reg(name="first", direction="input"), Reg(name="wide", direction="output", width=128)])
+# 
+# namespace = {
+#  "registers":registers,
+#  "modulename":"AXI_test",
+# }
+
+# 
+# 
+# templ = Template(open("template.templ", "r").read(), searchList=namespace)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate AXI interface modules.')
+    parser.add_argument("-c", help="yaml spec file disccribing the registers needed.", default=None, type=str)
+    parser.add_argument("-o", help="Output file", default=None, type=str)
+
+    args = parser.parse_args()
+    
+    discr = yaml.load(open(args.c, "r").read())
+    discr["registers"] = Registers([Reg(**spec) for spec in discr["registers"]])
+    templ = Template(open("template.templ", "r").read(), searchList=discr)
+    
+    output = open(args.o, "w") if args.o else sys.stdout
+    output.write(templ.__str__())
