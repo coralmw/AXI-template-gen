@@ -1,0 +1,8 @@
+modulename: PYEXAMPLE
+registers:
+  - name: input_port 
+    direction: input
+    width: 32
+  - name: output_port 
+    direction: output
+    width: 32
