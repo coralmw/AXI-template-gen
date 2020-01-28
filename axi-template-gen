@@ -3,6 +3,7 @@ from Cheetah.Template import Template
 import argparse
 import yaml
 import sys
+import os
 # input means input to the DUT, so output from the processing system/AXI master.
 
 class Reg(object):
@@ -78,7 +79,9 @@ if __name__ == "__main__":
 
     discr = yaml.load(open(args.c, "r").read())
     discr["registers"] = Registers([Reg(**spec) for spec in discr["registers"]])
-    templ = Template(open("template.templ", "r").read(), searchList=discr)
+
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "template.templ")) as f:
+        templ = Template(f.read(), searchList=discr)
 
     output = open(args.o, "w") if args.o else sys.stdout
     output.write(templ.__str__())
