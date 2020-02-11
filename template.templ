@@ -394,13 +394,13 @@ always @( posedge S_AXI_ACLK ) begin
   #for $internalreg, $internal_mapped_regs in $registers.internal_external_mapping
   #if not internalreg.input ## this goes to the PS/AXI master, so we copy the data on wires from PL to the local regs
   #if $len($internal_mapped_regs) > 1
-  { #for $part in $internal_mapped_regs #$part.name; #end for #} <= $internalreg.name;
+  { #echo ', '.join(map(lambda p: p.name, $internal_mapped_regs))#  } <= $internalreg.name;
   #else
   $internal_mapped_regs[0].name <= $internalreg.name;
   #end if
   #else
   #if $len($internal_mapped_regs) > 1
-  $internalreg.name <= { #for $part in $internal_mapped_regs #$part.name; #end for #};
+  $internalreg.name <= { #echo ', '.join(map(lambda p: p.name, $internal_mapped_regs))# };
   #else
   $internalreg.name <= $internal_mapped_regs[0].name;
   #end if
